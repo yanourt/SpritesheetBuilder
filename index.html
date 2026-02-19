@@ -26,6 +26,11 @@
             color: var(--text);
         }
 
+        body.dragover {
+            outline: 3px dashed var(--accent);
+            outline-offset: -10px;
+        }
+
         h1 {
             text-align: center;
             padding: 20px 0 10px;
@@ -270,16 +275,37 @@
                 ? "File Order ▲"
                 : "File Order ▼";
         };
+        // Prevent browser default behavior globally
+        window.addEventListener("dragover", e => {
+            e.preventDefault();
+        });
 
+        window.addEventListener("drop", e => {
+            e.preventDefault();
+        });
+
+        // Visual feedback on whole page
+        window.addEventListener("dragenter", e => {
+            if (e.dataTransfer.types.includes("Files")) {
+                document.body.classList.add("dragover");
+            }
+        });
+
+        window.addEventListener("dragleave", e => {
+            if (e.target === document.documentElement) {
+                document.body.classList.remove("dragover");
+            }
+        });
+
+        window.addEventListener("drop", e => {
+            document.body.classList.remove("dragover");
+
+            if (e.dataTransfer.files.length > 0) {
+                handleFiles(e.dataTransfer.files);
+            }
+        });
         dropzone.onclick = () => fileInput.click();
 
-        dropzone.ondragover = e => { e.preventDefault(); dropzone.classList.add("dragover"); };
-        dropzone.ondragleave = () => dropzone.classList.remove("dragover");
-        dropzone.ondrop = e => {
-            e.preventDefault();
-            dropzone.classList.remove("dragover");
-            handleFiles(e.dataTransfer.files);
-        };
 
         fileInput.onchange = () => handleFiles(fileInput.files);
 
