@@ -335,10 +335,14 @@
                 const parsedA = parseFilename(a.name);
                 const parsedB = parseFilename(b.name);
 
-                // If both have numbers → sort numerically
+                // If both have numbers → sort numerically, then by leading zeros (longer = higher priority)
                 if (parsedA.number !== null && parsedB.number !== null) {
                     if (parsedA.number !== parsedB.number) {
                         return parsedA.number - parsedB.number;
+                    }
+                    // If numbers are equal, prefer the one with more leading zeros (longer numeric string)
+                    if (parsedA.raw && parsedB.raw && parsedA.raw.length !== parsedB.raw.length) {
+                        return parsedB.raw.length - parsedA.raw.length;
                     }
                 }
 
@@ -349,17 +353,18 @@
 
         function parseFilename(name) {
             const nameWithoutExt = name.replace(/\.[^/.]+$/, "");
-            const matches = nameWithoutExt.match(/(\d+)/g);
-
-            if (!matches) {
+            const matches = [...nameWithoutExt.matchAll(/(\d+)/g)];
+            if (!matches.length) {
                 return { number: null };
             }
-
-            // Use the LAST number group found in filename
-            const lastNumber = matches[matches.length - 1];
-
+            // Heuristic: prefer the longest numeric substring (handles 0001 vs 01 etc)
+            let best = matches[0];
+            for (const m of matches) {
+                if (m[0].length > best[0].length) best = m;
+            }
             return {
-                number: parseInt(lastNumber, 10)
+                number: parseInt(best[0], 10),
+                raw: best[0]
             };
         }
 
